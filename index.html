@@ -6,11 +6,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Experimento 1</title>
 
-  <!-- jsPsych v8: archivos reales -->
+  <!-- jsPsych v8 -->
   <script src="https://cdn.jsdelivr.net/npm/jspsych@8.2.3/dist/jspsych.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jspsych@8.2.3/dist/jspsych.css" />
 
-  <!-- Plugins UMD (no usan import) -->
+  <!-- Plugins -->
   <script src="https://cdn.jsdelivr.net/npm/@jspsych/plugin-survey-text@2.1.0/dist/index.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@jspsych/plugin-html-button-response@2.1.0/dist/index.umd.min.js"></script>
 
@@ -33,15 +33,11 @@
       margin:0;
       background: var(--bg);
       color: var(--text);
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
     }
 
-    .jspsych-display-element{
-      padding: 24px 16px;
-    }
-    .jspsych-content{
-      max-width: 920px;
-    }
+    .jspsych-display-element{ padding: 24px 16px; }
+    .jspsych-content{ max-width: 920px; }
 
     .jspsych-btn{
       background: var(--btn);
@@ -54,107 +50,57 @@
       box-shadow: 0 8px 18px rgba(17,24,39,.15);
     }
     .jspsych-btn:hover{ background: var(--btnHover); }
-    .jspsych-btn:focus{ outline: 3px solid rgba(17,24,39,.25); outline-offset: 2px; }
 
-    input[type="text"], textarea{
+    input[type="text"]{
       width: 100%;
-      box-sizing: border-box;
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 12px 14px;
       font-size: 1rem;
     }
 
-    .wrap { max-width: 860px; margin: 0 auto; }
-    .big { font-size: 1.25rem; line-height: 1.65; }
-    .consigna { text-align: left; font-size: 1.05rem; line-height: 1.6; color: var(--text); }
+    .wrap{ max-width: 860px; margin: 0 auto; }
+    .big{ font-size: 1.25rem; line-height: 1.65; }
 
-    /* ===== Card (Opción B) ===== */
     .card{
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 22px 22px;
+      padding: 22px;
       box-shadow: var(--shadow);
     }
-    .h-title{
-      font-size: 1.35rem;
-      font-weight: 700;
-      margin: 0 0 10px;
-    }
-    .p-muted{
-      color: var(--muted);
-      margin: 8px 0 0;
-      font-size: 0.98rem;
-    }
-    .hr{
-      height: 1px;
-      background: var(--border);
-      border: 0;
-      margin: 14px 0;
-    }
+    .h-title{ font-size: 1.35rem; font-weight: 700; margin-bottom: 10px; }
+    .p-muted{ color: var(--muted); font-size: 0.98rem; }
+    .hr{ height:1px; background:var(--border); border:0; margin:14px 0; }
   </style>
 </head>
 
-<body></body>
+<body>
 
 <script>
-  /************ 1) CONFIG ************/
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxu0JFEj0AfFfuzH2-dxqj1qKCIzj_Mu_WQ5BL_dFnj7cBi87EFnSR34USmN6hBFF0/exec";
 
-  const EXP_VERSION = "exp1";
   const KEYWORD = "salió";
-
-  const CONSIGNA_HTML = `
-    <div class="wrap card consigna">
-      <div class="h-title">Experimento 1</div>
-      <p>Se le presentarán dos oraciones, una a la vez.</p>
-      <hr class="hr"/>
-      <ol>
-        <li>Lea la primera oración y luego presione “Siguiente”.</li>
-        <li>Lea la segunda oración y presione nuevamente “Siguiente”.</li>
-        <li>Al finalizar, se le hará una pregunta, la cual deberá responder.</li>
-      </ol>
-      <p class="p-muted">Responda lo más rápido posible, sin perder precisión.</p>
-    </div>
-  `;
-
   const SENTENCE_1 = "Juan salió de paseo con su familia. El domingo estaba muy soleado.";
   const SENTENCE_2 = "Juan salió de paseo con su familia porque el domingo estaba muy soleado.";
   const QUESTION_TEXT = `¿Estaba la palabra “${KEYWORD}” en las oraciones?`;
 
-  const EXPECTED_ANSWER = "Sí";
+  const CONSIGNA_HTML = `
+    <div class="wrap card">
+      <div class="h-title">Experimento 1</div>
+      <p>Se le presentarán dos oraciones, una a la vez.</p>
+      <hr class="hr">
+      <ol>
+        <li>Lea la primera oración y presione “Siguiente”.</li>
+        <li>Lea la segunda oración y presione nuevamente “Siguiente”.</li>
+        <li>Al finalizar, se le hará una pregunta.</li>
+      </ol>
+      <p class="p-muted">Responda lo más rápido posible.</p>
+    </div>
+  `;
 
-  /************ 2) HELPERS ************/
-  function postDataToSheet(payload) {
-    return fetch(SCRIPT_URL, {
+  function postData(payload){
+    fetch(SCRIPT_URL, {
       method: "POST",
       mode: "no-cors",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(payload)
-    });
-  }
-
-  function attachSNShortcuts() {
-    const handler = (ev) => {
-      const k = (ev.key || "").toLowerCase();
-      const btns = document.querySelectorAll("button.jspsych-btn");
-      if (k === "s" && btns[0]) btns[0].click();
-      if (k === "n" && btns[1]) btns[1].click();
-    };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }
-
-  /************ 3) INIT ************/
-  const jsPsych = initJsPsych({
-    on_finish: async () => {
-      const name = jsPsych.data.get().filter({ trial_tag: "name" }).values()[0]?.response?.name?.trim() ?? "";
-
-      const s1 = jsPsych.data.get().filter({ trial_tag: "sentence1" }).values()[0];
-      const s2 = jsPsych.data.get().filter({ trial_tag: "sentence2" }).values()[0];
-      const q  = jsPsych.data.get().filter({ trial_tag: "question" }).values()[0];
-
-      const responseIndex = q?.response; // 0=Sí, 1=No
-      co
-
+      headers: { "Content-Type": "text/plai
