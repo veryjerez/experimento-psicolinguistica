@@ -5,13 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Experimento 1</title>
 
-  <!-- jsPsych v8: apuntar a archivos reales (evita MIME application/node) -->
-  <script src="https://cdn.jsdelivr.net/npm/jspsych@8.2.3/dist/jspsych.js"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jspsych@8.2.3/dist/jspsych.css" />
-
-  <!-- Plugins UMD (no usan import) -->
-  <script src="https://cdn.jsdelivr.net/npm/@jspsych/plugin-survey-text@2.1.0/dist/index.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@jspsych/plugin-html-button-response@2.1.0/dist/index.umd.min.js"></script>
+  <!-- CSS de jsPsych -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jspsych@8.2.3/dist/jspsych.css?v=1" />
 
   <style>
     .wrap { max-width: 860px; margin: 0 auto; }
@@ -22,7 +17,12 @@
 </head>
 
 <body>
-  <script>
+  <script type="module">
+    /************ IMPORTS (ESM) ************/
+    import { initJsPsych } from "https://esm.sh/jspsych@8.2.3?bundle";
+    import surveyText from "https://esm.sh/@jspsych/plugin-survey-text@2.1.0?bundle";
+    import htmlButtonResponse from "https://esm.sh/@jspsych/plugin-html-button-response@2.1.0?bundle";
+
     /************ 1) CONFIG ************/
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxu0JFEj0AfFfuzH2-dxqj1qKCIzj_Mu_WQ5BL_dFnj7cBi87EFnSR34USmN6hBFF0/exec";
 
@@ -103,35 +103,35 @@
 
     /************ 4) TRIALS ************/
     timeline.push({
-      type: jsPsychSurveyText,
+      type: surveyText,
       preamble: `<div class="wrap"><h3>Identificación</h3><p>Por favor escriba su nombre.</p></div>`,
       questions: [{ prompt: "Nombre:", name: "name", required: true, placeholder: "Ej: Ana Pérez" }],
       data: { trial_tag: "name" }
     });
 
     timeline.push({
-      type: jsPsychHtmlButtonResponse,
+      type: htmlButtonResponse,
       stimulus: CONSIGNA_HTML,
       choices: ["Siguiente"],
       data: { trial_tag: "consigna" }
     });
 
     timeline.push({
-      type: jsPsychHtmlButtonResponse,
+      type: htmlButtonResponse,
       stimulus: `<div class="wrap big">${SENTENCE_1}</div>`,
       choices: ["Siguiente"],
       data: { trial_tag: "sentence1" }
     });
 
     timeline.push({
-      type: jsPsychHtmlButtonResponse,
+      type: htmlButtonResponse,
       stimulus: `<div class="wrap big">${SENTENCE_2}</div>`,
       choices: ["Siguiente"],
       data: { trial_tag: "sentence2" }
     });
 
     timeline.push({
-      type: jsPsychHtmlButtonResponse,
+      type: htmlButtonResponse,
       stimulus: `<div class="wrap big"><p>${QUESTION_TEXT}</p><p style="font-size:0.95rem;opacity:0.8;">(En computadora: teclas S = Sí, N = No)</p></div>`,
       choices: ["Sí", "No"],
       on_load: () => { window.__cleanupSN = attachSNShortcuts(); },
@@ -140,7 +140,7 @@
     });
 
     timeline.push({
-      type: jsPsychHtmlButtonResponse,
+      type: htmlButtonResponse,
       stimulus: `<div class="wrap"><h3>Gracias</h3><p>Su participación ha finalizado.</p></div>`,
       choices: ["Finalizar"],
       data: { trial_tag: "end" }
@@ -150,6 +150,8 @@
   </script>
 </body>
 </html>
+
+
 
 
 
