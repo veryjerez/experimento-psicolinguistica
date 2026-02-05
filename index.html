@@ -5,16 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Experimento 1</title>
 
-  <!-- jsPsych v8 desde CDN -->
-  <script src="https://unpkg.com/jspsych@8.2.3"></script>
-  <link href="https://unpkg.com/jspsych@8.2.3/css/jspsych.css" rel="stylesheet" />
+  <!-- jsPsych v8 (archivos reales en /dist) -->
+  <script src="https://unpkg.com/jspsych@8.2.3/dist/jspsych.js"></script>
+  <link href="https://unpkg.com/jspsych@8.2.3/dist/jspsych.css" rel="stylesheet" />
 
-  <!-- Plugins -->
-  <script src="https://unpkg.com/@jspsych/plugin-survey-text@2.1.0"></script>
-  <script src="https://unpkg.com/@jspsych/plugin-html-button-response@2.1.0"></script>
+  <!-- Plugins (archivos reales en /dist) -->
+  <script src="https://unpkg.com/@jspsych/plugin-survey-text@2.1.0/dist/index.js"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-html-button-response@2.1.0/dist/index.js"></script>
 
   <style>
-    /* Un poco más “mobile friendly” */
     .wrap { max-width: 860px; margin: 0 auto; }
     .big { font-size: 1.25rem; line-height: 1.6; }
     .consigna { text-align: left; font-size: 1.05rem; line-height: 1.5; }
@@ -22,168 +21,139 @@
   </style>
 </head>
 
-<body></body>
+<body>
+  <script>
+    /************ 1) CONFIG ************/
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxu0JFEj0AfFfuzH2-dxqj1qKCIzj_Mu_WQ5BL_dFnj7cBi87EFnSR34USmN6hBFF0/exec"; // sin saltos de línea
 
-<script>
-  /************ 1) CONFIG ************/
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxu0JFEj0AfFfuzH2-dxqj1qKCIzj_Mu_WQ5BL_dFnj7cBi87EFnSR34USmN6hBFF0/exec
-"; // <- tu Apps Script Web App URL
+    const EXP_VERSION = "exp1";
+    const KEYWORD = "salió";
 
-  // Textos (pueden variar por experimento)
-  const EXP_VERSION = "exp1";
-  const KEYWORD = "salió";
+    const CONSIGNA_HTML = `
+      <div class="wrap consigna">
+        <h3>Experimento 1</h3>
+        <p>Se le presentarán dos oraciones, una a la vez.</p>
+        <ol>
+          <li>Lea la primera oración y luego presione “Siguiente”.</li>
+          <li>Lea la segunda oración y presione nuevamente “Siguiente”.</li>
+          <li>Al finalizar, se le hará una pregunta, la cual deberá responder.</li>
+        </ol>
+      </div>
+    `;
 
-  const CONSIGNA_HTML = `
-    <div class="wrap consigna">
-      <h3>Experimento 1</h3>
-      <p>Se le presentarán dos oraciones, una a la vez.</p>
-      <ol>
-        <li>Lea la primera oración y luego presione “Siguiente”.</li>
-        <li>Lea la segunda oración y presione nuevamente “Siguiente”.</li>
-        <li>Al finalizar, se le hará una pregunta, la cual deberá responder.</li>
-      </ol>
-    </div>
-  `;
+    const SENTENCE_1 = "Juan salió de paseo con su familia. El domingo estaba muy soleado.";
+    const SENTENCE_2 = "Juan salió de paseo con su familia porque el domingo estaba muy soleado.";
+    const QUESTION_TEXT = `¿Estaba la palabra “${KEYWORD}” en las oraciones?`;
+    const EXPECTED_ANSWER = "Sí";
 
-  const SENTENCE_1 = "Juan salió de paseo con su familia. El domingo estaba muy soleado.";
-  const SENTENCE_2 = "Juan salió de paseo con su familia porque el domingo estaba muy soleado.";
-  const QUESTION_TEXT = `¿Estaba la palabra “${KEYWORD}” en las oraciones?`;
-
-  // En tu condición actual: la palabra está en ambas, por tanto la correcta es "Sí".
-  const EXPECTED_ANSWER = "Sí";
-
-
-  /************ 2) HELPERS ************/
-  function postDataToSheet(payload) {
-    // Para evitar problemas CORS/preflight en móviles:
-    // - content-type text/plain
-    // - mode no-cors (no podremos leer respuesta, pero sí se guarda)
-    return fetch(SCRIPT_URL, {
-      method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(payload)
-    });
-  }
-
-  function attachSNShortcuts() {
-    // Atajos S/N si hay teclado (laptop/PC). En móvil no estorba.
-    const handler = (ev) => {
-      const k = ev.key.toLowerCase();
-      if (k === "s") {
-        const btns = document.querySelectorAll("button.jspsych-btn");
-        if (btns && btns[0]) btns[0].click();
-      }
-      if (k === "n") {
-        const btns = document.querySelectorAll("button.jspsych-btn");
-        if (btns && btns[1]) btns[1].click();
-      }
-    };
-    document.addEventListener("keydown", handler);
-    // devolvemos función para limpiar
-    return () => document.removeEventListener("keydown", handler);
-  }
-
-  /************ 3) INIT ************/
-  const jsPsych = initJsPsych({
-    on_finish: async () => {
-      // Extraer datos relevantes de los trials
-      const name = jsPsych.data.get().filter({ trial_tag: "name" }).values()[0]?.response?.name?.trim() ?? "";
-
-      const s1 = jsPsych.data.get().filter({ trial_tag: "sentence1" }).values()[0];
-      const s2 = jsPsych.data.get().filter({ trial_tag: "sentence2" }).values()[0];
-      const q  = jsPsych.data.get().filter({ trial_tag: "question" }).values()[0];
-
-      const responseIndex = q?.response; // 0=Sí, 1=No (por html-button-response)
-      const responseText = (responseIndex === 0) ? "Sí" : (responseIndex === 1) ? "No" : "";
-
-      const correct = (responseText === EXPECTED_ANSWER);
-
-      const payload = {
-        experiment_version: EXP_VERSION,
-        name,
-        sentence1_rt_ms: s1?.rt ?? "",
-        sentence2_rt_ms: s2?.rt ?? "",
-        question_rt_ms: q?.rt ?? "",
-        response: responseText,
-        correct,
-        keyword: KEYWORD,
-        sentence1_text: SENTENCE_1,
-        sentence2_text: SENTENCE_2,
-        question_text: QUESTION_TEXT
-      };
-
-      try {
-        await postDataToSheet(payload);
-      } catch (e) {
-        // Si falla internet, al menos mostramos los datos para copiar
-        console.error("No se pudo enviar al Sheet:", e);
-      }
+    /************ 2) HELPERS ************/
+    function postDataToSheet(payload) {
+      return fetch(SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload)
+      });
     }
-  });
 
-  const timeline = [];
+    function attachSNShortcuts() {
+      const handler = (ev) => {
+        const k = ev.key.toLowerCase();
+        const btns = document.querySelectorAll("button.jspsych-btn");
+        if (k === "s" && btns[0]) btns[0].click();
+        if (k === "n" && btns[1]) btns[1].click();
+      };
+      document.addEventListener("keydown", handler);
+      return () => document.removeEventListener("keydown", handler);
+    }
 
-  /************ 4) TRIALS ************/
-  // Nombre
-  timeline.push({
-    type: jsPsychSurveyText,
-    preamble: `<div class="wrap"><h3>Identificación</h3><p>Por favor escriba su nombre.</p></div>`,
-    questions: [
-      { prompt: "Nombre:", name: "name", required: true, placeholder: "Ej: Ana Pérez" }
-    ],
-    data: { trial_tag: "name" }
-  });
+    /************ 3) INIT ************/
+    const jsPsych = initJsPsych({
+      on_finish: async () => {
+        const name = jsPsych.data.get().filter({ trial_tag: "name" }).values()[0]?.response?.name?.trim() ?? "";
 
-  // Consigna
-  timeline.push({
-    type: jsPsychHtmlButtonResponse,
-    stimulus: CONSIGNA_HTML,
-    choices: ["Siguiente"],
-    data: { trial_tag: "consigna" }
-  });
+        const s1 = jsPsych.data.get().filter({ trial_tag: "sentence1" }).values()[0];
+        const s2 = jsPsych.data.get().filter({ trial_tag: "sentence2" }).values()[0];
+        const q  = jsPsych.data.get().filter({ trial_tag: "question" }).values()[0];
 
-  // Oración 1
-  timeline.push({
-    type: jsPsychHtmlButtonResponse,
-    stimulus: `<div class="wrap big">${SENTENCE_1}</div>`,
-    choices: ["Siguiente"],
-    data: { trial_tag: "sentence1" }
-  });
+        const responseIndex = q?.response; // 0=Sí, 1=No
+        const responseText = (responseIndex === 0) ? "Sí" : (responseIndex === 1) ? "No" : "";
+        const correct = (responseText === EXPECTED_ANSWER);
 
-  // Oración 2
-  timeline.push({
-    type: jsPsychHtmlButtonResponse,
-    stimulus: `<div class="wrap big">${SENTENCE_2}</div>`,
-    choices: ["Siguiente"],
-    data: { trial_tag: "sentence2" }
-  });
+        const payload = {
+          experiment_version: EXP_VERSION,
+          name,
+          sentence1_rt_ms: s1?.rt ?? "",
+          sentence2_rt_ms: s2?.rt ?? "",
+          question_rt_ms: q?.rt ?? "",
+          response: responseText,
+          correct,
+          keyword: KEYWORD,
+          sentence1_text: SENTENCE_1,
+          sentence2_text: SENTENCE_2,
+          question_text: QUESTION_TEXT
+        };
 
-  // Pregunta (botones Sí/No + atajo S/N)
-  timeline.push({
-    type: jsPsychHtmlButtonResponse,
-    stimulus: `<div class="wrap big"><p>${QUESTION_TEXT}</p><p style="font-size:0.95rem;opacity:0.8;">(En computadora: teclas S = Sí, N = No)</p></div>`,
-    choices: ["Sí", "No"],
-    on_load: () => {
-      window.__cleanupSN = attachSNShortcuts();
-    },
-    on_finish: () => {
-      if (window.__cleanupSN) window.__cleanupSN();
-    },
-    data: { trial_tag: "question" }
-  });
+        try {
+          await postDataToSheet(payload);
+        } catch (e) {
+          console.error("No se pudo enviar al Sheet:", e);
+        }
+      }
+    });
 
-  // Fin
-  timeline.push({
-    type: jsPsychHtmlButtonResponse,
-    stimulus: `<div class="wrap"><h3>Gracias</h3><p>Su participación ha finalizado.</p></div>`,
-    choices: ["Finalizar"],
-    data: { trial_tag: "end" }
-  });
+    const timeline = [];
 
-  jsPsych.run(timeline);
-</script>
+    /************ 4) TRIALS ************/
+    timeline.push({
+      type: jsPsychSurveyText,
+      preamble: `<div class="wrap"><h3>Identificación</h3><p>Por favor escriba su nombre.</p></div>`,
+      questions: [{ prompt: "Nombre:", name: "name", required: true, placeholder: "Ej: Ana Pérez" }],
+      data: { trial_tag: "name" }
+    });
+
+    timeline.push({
+      type: jsPsychHtmlButtonResponse,
+      stimulus: CONSIGNA_HTML,
+      choices: ["Siguiente"],
+      data: { trial_tag: "consigna" }
+    });
+
+    timeline.push({
+      type: jsPsychHtmlButtonResponse,
+      stimulus: `<div class="wrap big">${SENTENCE_1}</div>`,
+      choices: ["Siguiente"],
+      data: { trial_tag: "sentence1" }
+    });
+
+    timeline.push({
+      type: jsPsychHtmlButtonResponse,
+      stimulus: `<div class="wrap big">${SENTENCE_2}</div>`,
+      choices: ["Siguiente"],
+      data: { trial_tag: "sentence2" }
+    });
+
+    timeline.push({
+      type: jsPsychHtmlButtonResponse,
+      stimulus: `<div class="wrap big"><p>${QUESTION_TEXT}</p><p style="font-size:0.95rem;opacity:0.8;">(En computadora: teclas S = Sí, N = No)</p></div>`,
+      choices: ["Sí", "No"],
+      on_load: () => { window.__cleanupSN = attachSNShortcuts(); },
+      on_finish: () => { if (window.__cleanupSN) window.__cleanupSN(); },
+      data: { trial_tag: "question" }
+    });
+
+    timeline.push({
+      type: jsPsychHtmlButtonResponse,
+      stimulus: `<div class="wrap"><h3>Gracias</h3><p>Su participación ha finalizado.</p></div>`,
+      choices: ["Finalizar"],
+      data: { trial_tag: "end" }
+    });
+
+    jsPsych.run(timeline);
+  </script>
+</body>
 </html>
+
 
 
 
