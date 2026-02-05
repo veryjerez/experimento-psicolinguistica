@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Experimento 1</title>
 
-  <!-- jsPsych v8 (archivos reales en /dist) -->
-  <script src="https://unpkg.com/jspsych@8.2.3/dist/jspsych.js"></script>
-  <link href="https://unpkg.com/jspsych@8.2.3/dist/jspsych.css" rel="stylesheet" />
+<!-- jsPsych (UMD) -->
+<script src="https://cdn.jsdelivr.net/npm/jspsych@8.2.3"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jspsych@8.2.3/css/jspsych.css">
 
-  <!-- Plugins (archivos reales en /dist) -->
-  <script src="https://unpkg.com/@jspsych/plugin-survey-text@2.1.0/dist/index.js"></script>
-  <script src="https://unpkg.com/@jspsych/plugin-html-button-response@2.1.0/dist/index.js"></script>
+<!-- Plugins (UMD) -->
+<script src="https://cdn.jsdelivr.net/npm/@jspsych/plugin-survey-text@2.1.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/@jspsych/plugin-html-button-response@2.1.0"></script>
 
   <style>
     .wrap { max-width: 860px; margin: 0 auto; }
@@ -24,7 +24,8 @@
 <body>
   <script>
     /************ 1) CONFIG ************/
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxu0JFEj0AfFfuzH2-dxqj1qKCIzj_Mu_WQ5BL_dFnj7cBi87EFnSR34USmN6hBFF0/exec"; // sin saltos de línea
+  
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxu0JFEj0AfFfuzH2-dxqj1qKCIzj_Mu_WQ5BL_dFnj7cBi87EFnSR34USmN6hBFF0/exec";
 
     const EXP_VERSION = "exp1";
     const KEYWORD = "salió";
@@ -153,6 +154,7 @@
   </script>
 </body>
 </html>
+
 
 
 
