@@ -83,7 +83,7 @@
       margin: 14px 0;
     }
 
-    /* Probe (palabra) bien grande y centrada */
+    /* Palabra probe */
     .probe-word{
       font-size: 2.4rem;
       letter-spacing: 0.06em;
@@ -111,17 +111,12 @@
     /************ 1) CONFIG ************/
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxu0JFEj0AfFfuzH2-dxqj1qKCIzj_Mu_WQ5BL_dFnj7cBi87EFnSR34USmN6hBFF0/exec";
 
-    // Identificador del experimento / condición
     const EXP_VERSION = "exp1_sin_conector_probe";
 
-    // Oraciones (sin conector)
     const SENTENCE_1 = "Juan salió de paseo con su familia.";
     const SENTENCE_2 = "El domingo estaba muy soleado.";
 
-    // Probe (palabra)
     const PROBE_WORD = "SALIÓ";
-
-    // En este caso, la palabra sí aparece (en la oración 1)
     const EXPECTED_PROBE_RESPONSE = "Sí";
 
     const CONSIGNA_HTML = `
@@ -173,22 +168,28 @@
 
         const responseIndex = probe?.response; // 0=Sí, 1=No
         const responseText = (responseIndex === 0) ? "Sí" : (responseIndex === 1) ? "No" : "";
-
         const correct = (responseText === EXPECTED_PROBE_RESPONSE);
 
+        /* 
+          ⚠️ IMPORTANTE:
+          Guardamos el PROBE usando los nombres viejos
+          para que el Sheet actual sí lo registre.
+        */
         const payload = {
           experiment_version: EXP_VERSION,
           name,
 
-          sentence1_text: SENTENCE_1,
-          sentence2_text: SENTENCE_2,
           sentence1_rt_ms: s1?.rt ?? "",
           sentence2_rt_ms: s2?.rt ?? "",
 
-          probe_word: PROBE_WORD,
-          probe_response: responseText,
-          probe_correct: correct,
-          probe_rt_ms: probe?.rt ?? ""
+          question_rt_ms: probe?.rt ?? "",   // RT del PROBE
+          response: responseText,            // Sí / No del PROBE
+          correct: correct,                  // exactitud del PROBE
+          keyword: PROBE_WORD,
+
+          sentence1_text: SENTENCE_1,
+          sentence2_text: SENTENCE_2,
+          question_text: `PALABRA: ${PROBE_WORD}`
         };
 
         try { await postDataToSheet(payload); } catch (e) {}
@@ -198,7 +199,6 @@
     const timeline = [];
 
     /************ 4) TRIALS ************/
-    // Nombre
     timeline.push({
       type: jsPsychSurveyHtmlForm,
       preamble: `
@@ -217,7 +217,6 @@
       data: { trial_tag: "name" }
     });
 
-    // Consigna
     timeline.push({
       type: jsPsychHtmlButtonResponse,
       stimulus: CONSIGNA_HTML,
@@ -225,7 +224,6 @@
       data: { trial_tag: "consigna" }
     });
 
-    // Oración 1
     timeline.push({
       type: jsPsychHtmlButtonResponse,
       stimulus: `<div class="wrap card big">${SENTENCE_1}</div>`,
@@ -233,7 +231,6 @@
       data: { trial_tag: "sentence1" }
     });
 
-    // Oración 2
     timeline.push({
       type: jsPsychHtmlButtonResponse,
       stimulus: `<div class="wrap card big">${SENTENCE_2}</div>`,
@@ -241,7 +238,6 @@
       data: { trial_tag: "sentence2" }
     });
 
-    // Probe (palabra)
     timeline.push({
       type: jsPsychHtmlButtonResponse,
       stimulus: `
@@ -256,7 +252,6 @@
       data: { trial_tag: "probe" }
     });
 
-    // Fin
     timeline.push({
       type: jsPsychHtmlButtonResponse,
       stimulus: `
@@ -274,6 +269,5 @@
 
 </body>
 </html>
-
 
 
