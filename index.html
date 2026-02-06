@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta http-equiv="Content-Language" content="es">
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Experimento 1</title>
+  <title>Experimento 1 – Probe</title>
 
   <!-- CSS local jsPsych -->
   <link rel="stylesheet" href="./lib/jspsych.css" />
@@ -82,6 +82,21 @@
       border: 0;
       margin: 14px 0;
     }
+
+    /* Probe (palabra) bien grande y centrada */
+    .probe-word{
+      font-size: 2.4rem;
+      letter-spacing: 0.06em;
+      font-weight: 800;
+      text-align: center;
+      margin: 0;
+    }
+    .hint{
+      text-align:center;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
   </style>
 </head>
 
@@ -96,26 +111,32 @@
     /************ 1) CONFIG ************/
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxu0JFEj0AfFfuzH2-dxqj1qKCIzj_Mu_WQ5BL_dFnj7cBi87EFnSR34USmN6hBFF0/exec";
 
-    const EXP_VERSION = "exp1";
-    const KEYWORD = "salió";
+    // Identificador del experimento / condición
+    const EXP_VERSION = "exp1_sin_conector_probe";
 
-    const SENTENCE_1 = "Juan salió de paseo con su familia. El domingo estaba muy soleado.";
-    const SENTENCE_2 = "Juan salió de paseo con su familia porque el domingo estaba muy soleado.";
-    const QUESTION_TEXT = `¿Estaba la palabra “${KEYWORD}” en las oraciones?`;
+    // Oraciones (sin conector)
+    const SENTENCE_1 = "Juan salió de paseo con su familia.";
+    const SENTENCE_2 = "El domingo estaba muy soleado.";
 
-    const EXPECTED_ANSWER = "Sí";
+    // Probe (palabra)
+    const PROBE_WORD = "SALIÓ";
+
+    // En este caso, la palabra sí aparece (en la oración 1)
+    const EXPECTED_PROBE_RESPONSE = "Sí";
 
     const CONSIGNA_HTML = `
       <div class="wrap card consigna">
         <div class="h-title">Experimento 1</div>
-        <p>Se le presentarán dos oraciones, una a la vez.</p>
+        <p>Se le presentarán dos oraciones, una a la vez, en la pantalla.</p>
         <hr class="hr"/>
         <ol>
-          <li>Lea la primera oración y luego presione “Siguiente”.</li>
+          <li>Lea la primera oración y presione “Siguiente”.</li>
           <li>Lea la segunda oración y presione nuevamente “Siguiente”.</li>
-          <li>Al finalizar, se le hará una pregunta, la cual deberá responder.</li>
+          <li>Inmediatamente después aparecerá una palabra.</li>
+          <li>Indique lo más rápido y preciso posible si esa palabra apareció en alguna de las oraciones anteriores.</li>
         </ol>
-        <p class="p-muted">Responda lo más rápido posible, sin perder precisión.</p>
+        <p><strong>No piense demasiado la respuesta.</strong></p>
+        <p><strong>Responda lo más rápido posible.</strong></p>
       </div>
     `;
 
@@ -148,25 +169,26 @@
 
         const s1 = jsPsych.data.get().filter({ trial_tag: "sentence1" }).values()[0];
         const s2 = jsPsych.data.get().filter({ trial_tag: "sentence2" }).values()[0];
-        const q  = jsPsych.data.get().filter({ trial_tag: "question" }).values()[0];
+        const probe = jsPsych.data.get().filter({ trial_tag: "probe" }).values()[0];
 
-        const responseIndex = q?.response;
+        const responseIndex = probe?.response; // 0=Sí, 1=No
         const responseText = (responseIndex === 0) ? "Sí" : (responseIndex === 1) ? "No" : "";
 
-        const correct = (responseText === EXPECTED_ANSWER);
+        const correct = (responseText === EXPECTED_PROBE_RESPONSE);
 
         const payload = {
           experiment_version: EXP_VERSION,
           name,
-          sentence1_rt_ms: s1?.rt ?? "",
-          sentence2_rt_ms: s2?.rt ?? "",
-          question_rt_ms: q?.rt ?? "",
-          response: responseText,
-          correct,
-          keyword: KEYWORD,
+
           sentence1_text: SENTENCE_1,
           sentence2_text: SENTENCE_2,
-          question_text: QUESTION_TEXT
+          sentence1_rt_ms: s1?.rt ?? "",
+          sentence2_rt_ms: s2?.rt ?? "",
+
+          probe_word: PROBE_WORD,
+          probe_response: responseText,
+          probe_correct: correct,
+          probe_rt_ms: probe?.rt ?? ""
         };
 
         try { await postDataToSheet(payload); } catch (e) {}
@@ -176,6 +198,7 @@
     const timeline = [];
 
     /************ 4) TRIALS ************/
+    // Nombre
     timeline.push({
       type: jsPsychSurveyHtmlForm,
       preamble: `
@@ -194,6 +217,7 @@
       data: { trial_tag: "name" }
     });
 
+    // Consigna
     timeline.push({
       type: jsPsychHtmlButtonResponse,
       stimulus: CONSIGNA_HTML,
@@ -201,6 +225,7 @@
       data: { trial_tag: "consigna" }
     });
 
+    // Oración 1
     timeline.push({
       type: jsPsychHtmlButtonResponse,
       stimulus: `<div class="wrap card big">${SENTENCE_1}</div>`,
@@ -208,6 +233,7 @@
       data: { trial_tag: "sentence1" }
     });
 
+    // Oración 2
     timeline.push({
       type: jsPsychHtmlButtonResponse,
       stimulus: `<div class="wrap card big">${SENTENCE_2}</div>`,
@@ -215,20 +241,22 @@
       data: { trial_tag: "sentence2" }
     });
 
+    // Probe (palabra)
     timeline.push({
       type: jsPsychHtmlButtonResponse,
       stimulus: `
-        <div class="wrap card big">
-          <p>${QUESTION_TEXT}</p>
-          <p class="p-muted">(En computadora: teclas S = Sí, N = No)</p>
+        <div class="wrap card">
+          <p class="probe-word">${PROBE_WORD}</p>
+          <div class="hint">(En computadora: teclas S = Sí, N = No)</div>
         </div>
       `,
       choices: ["Sí", "No"],
       on_load: () => { window.__cleanupSN = attachSNShortcuts(); },
       on_finish: () => { if (window.__cleanupSN) window.__cleanupSN(); },
-      data: { trial_tag: "question" }
+      data: { trial_tag: "probe" }
     });
 
+    // Fin
     timeline.push({
       type: jsPsychHtmlButtonResponse,
       stimulus: `
@@ -246,5 +274,6 @@
 
 </body>
 </html>
+
 
 
